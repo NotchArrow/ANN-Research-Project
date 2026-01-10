@@ -1,42 +1,46 @@
+import os
+import random
+
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor
 
-training_data = datasets.MNIST(
-    root="data",
-    train=True,
-    download=True,
-    transform=ToTensor(),
-)
-test_data = datasets.MNIST(
-    root="data",
-    train=False,
-    download=True,
-    transform=ToTensor(),
-)
+import ModelData
+from ModelData import Datasets, DataType
 
-batch_size = 64
 
-# Create data loaders.
-train_dataloader = DataLoader(training_data, batch_size=batch_size)
-test_dataloader = DataLoader(test_data, batch_size=batch_size)
+# force gpu usage for training and testing models
+device = torch.device("cuda")
+print(f"Using {device} device")
 
+# force deterministic gpu behavior
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+torch.use_deterministic_algorithms(True)
+
+# generate seed
+seed = random.randint(1, 1000000)
+print(f"Using seed: {seed}")
+
+# seed initial weights and shuffling
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+
+# generate dataloaders
+train_dataloader = ModelData.getLoader(dataset=Datasets.MNIST, batch_size=64, data_type=DataType.TRAINING, seed=seed)
+test_dataloader = ModelData.getLoader(dataset=Datasets.MNIST, batch_size=64, data_type=DataType.TESTING, seed=seed)
 for X, y in test_dataloader:
     print(f"Shape of X [N, C, H, W]: {X.shape}")
     print(f"Shape of y: {y.shape} {y.dtype}")
     break
 
-# hardcode gpu usage, crash if using cpu to ensure consistent testing
-device = torch.device("cuda")
-print(f"Using {device} device")
-
-# Define model
+# define model
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
+
+        # set model architecture
         self.linear_relu_stack = nn.Sequential(
             nn.Linear(28*28, 512),
             nn.ReLU(),
@@ -50,20 +54,22 @@ class NeuralNetwork(nn.Module):
         logits = self.linear_relu_stack(x)
         return logits
 
+# output model info and load to gpu
 model = NeuralNetwork().to(device)
 print(model)
 
+# define training loop
 def train(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     model.train()
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
 
-        # Compute prediction error
+        # compute prediction error
         pred = model(X)
         loss = loss_fn(pred, y)
 
-        # Backpropagation
+        # backpropagation
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -72,6 +78,7 @@ def train(dataloader, model, loss_fn, optimizer):
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
+# define testing algorithm for verification using testing data
 def test(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
@@ -87,9 +94,12 @@ def test(dataloader, model, loss_fn):
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
+# default optimizer settings, will be changed during experimentation
+optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+
+# run model training/testing for 5 epochs
 epochs = 5
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train(train_dataloader, model, loss_fn, optimizer)
