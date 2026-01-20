@@ -1,4 +1,5 @@
 import random
+import time
 from datetime import datetime
 
 import pandas as pd
@@ -13,19 +14,19 @@ if __name__ == "__main__":
     data = {}
 
     headers = ["Batch Size", "Dataset ID", "Learning Rate", "Optimizer ID", "Architecture ID", "Trial Number", "Epoch",
-               "Seed", "Runtime (s)",
+               "Seed", "Data Load Time (s)", "Runtime (s)",
                "Loss (Training)", "Accuracy (Training)", "F1 Score (Training)",
                "Loss (Testing)", "Accuracy (Testing)", "F1 Score (Testing)"]
     i = 1
     for batchSize in [64, 128, 256]:
-        for dataset in [0, 1, 2]: # MNIST, FASHION, CIFAR
+        for dataset in [0, 1, 2]:  # MNIST, FASHION, CIFAR
             for learningRate in [0.01, 0.001, 0.0001]:
-                for optimizer in [0, 1]: # SGD, ADAM
+                for optimizer in [0, 1]:  # SGD, ADAM
                     for architecture in range(20):
                         for trial in range(1, 4):
                             for epoch in range(1, 51):
                                 data[i] = [batchSize, dataset, learningRate, optimizer, architecture, trial, epoch,
-                                           0, 0,
+                                           0, 0, 0,
                                            0, 0, 0,
                                            0, 0, 0]
                                 i += 1
@@ -45,6 +46,7 @@ def getTrial():
 
     for index, row in dataFrame.iterrows():
         if row["Epoch"] == 1 and row["Seed"] == 0:
+            start_index = index
             batchSize = int(row["Batch Size"])
             datasetID = row["Dataset ID"]
             learningRate = row["Learning Rate"]
@@ -75,6 +77,7 @@ def getTrial():
             torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
 
+            start_load_time = time.time()
             loaded_train = DataLoader(
                 TensorDataset(
                     torch.stack([img for img, _ in train_dataset]),
@@ -93,6 +96,7 @@ def getTrial():
                 shuffle=False,
                 generator=torch.Generator().manual_seed(seed),
             )
+            load_time = time.time() - start_load_time
 
             match optimizerID:
                 case 0:
@@ -300,6 +304,6 @@ def getTrial():
                         nn.Linear(64, 10)
                     )
 
-            print(f"Started Trial At: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
-            return loaded_train, loaded_test, learningRate, optimizer, architecture, seed
+            print(f"Started Trial At: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Load Time Elapsed: {round(load_time, 2)}s")
+            return loaded_train, loaded_test, learningRate, optimizer, architecture, seed, load_time, start_index
     return None

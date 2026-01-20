@@ -1,9 +1,11 @@
 import os
 import time
+import warnings
 from datetime import datetime
 
 import pandas as pd
 import torch
+from numpy.exceptions import VisibleDeprecationWarning
 from torch import nn
 from torchmetrics.classification import MulticlassF1Score
 
@@ -70,6 +72,7 @@ def test(dataloader, model, loss_fn):
             pred = model(X)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            f1_metric.update(pred, y)
     test_loss /= num_batches
     correct /= size
     f1 = f1_metric.compute().item()
@@ -88,10 +91,13 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     torch.use_deterministic_algorithms(True)
 
+    # supress numpy deprecation warning for cifar10 (caused by torchvision)
+    warnings.filterwarnings("ignore", category=VisibleDeprecationWarning)
+
     # get next trial to complete and start loop
     trial_data = TrialManager.getTrial()
     while trial_data is not None:
-        train_dataloader, test_dataloader, lr, optimizer_type, architecture, seed = trial_data
+        train_dataloader, test_dataloader, lr, optimizer_type, architecture, seed, load_time, start_index = trial_data
 
         # load model to gpu
         model = NeuralNetwork(architecture=architecture).to(device)
@@ -128,14 +134,11 @@ if __name__ == "__main__":
 
         # log data
         dataFrame = pd.read_csv("trials.csv", dtype=float)
-        for index, row in dataFrame.iterrows():
-            if row["Seed"] == 0:
-                startIndex = index
-                break
 
-        for i, index in enumerate(range(startIndex, startIndex + epochs)):
+        for i, index in enumerate(range(start_index, start_index + epochs)):
             row = dataFrame.iloc[index]
             row["Seed"] = seed
+            row["Data Load Time (s)"] = load_time
             row["Runtime (s)"] = runtimes[i]
             row["Loss (Training)"] = training_losses[i]
             row["Accuracy (Training)"] = training_accuracies[i]
