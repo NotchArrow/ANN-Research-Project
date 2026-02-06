@@ -9,7 +9,8 @@ from torch.utils.data import TensorDataset, DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
-if __name__ == "__main__":
+
+def genTrials():
     print("Generating trials spreadsheet...")
     data = {}
 
@@ -307,3 +308,7 @@ def getTrial():
             print(f"Started Trial At: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Load Time Elapsed: {round(load_time, 2)}s")
             return loaded_train, loaded_test, learningRate, optimizer, architecture, seed, load_time, start_index
     return None
+
+
+if __name__ == "__main__":
+    genTrials()
