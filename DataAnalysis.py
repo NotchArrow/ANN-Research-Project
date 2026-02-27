@@ -97,6 +97,7 @@ def visualizations(df):
                                columns="Optimizer ID",
                                values="Gap",
                                aggfunc="mean")
+    pivot_map = pivot_map.rename(columns={0: "SGD", 1: "Adam"})
     plt.figure(figsize=(8, 10))
     sns.heatmap(pivot_map, annot=True, cmap="YlOrRd")
     plt.title("Overfitting Heatmap: Architecture vs Optimizer")
@@ -105,6 +106,7 @@ def visualizations(df):
                                columns="Optimizer ID",
                                values="Accuracy (Training)",
                                aggfunc="mean")
+    pivot_map = pivot_map.rename(columns={0: "SGD", 1: "Adam"})
     plt.figure(figsize=(8, 10))
     sns.heatmap(pivot_map, annot=True, cmap="Greens")
     plt.title("Training Accuracy Heatmap: Architecture vs Optimizer")
@@ -113,6 +115,7 @@ def visualizations(df):
                                columns="Optimizer ID",
                                values="Accuracy (Testing)",
                                aggfunc="mean")
+    pivot_map = pivot_map.rename(columns={0: "SGD", 1: "Adam"})
     plt.figure(figsize=(8, 10))
     sns.heatmap(pivot_map, annot=True, cmap="Greens")
     plt.title("Testing Accuracy Heatmap: Architecture vs Optimizer")
