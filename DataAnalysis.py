@@ -98,27 +98,33 @@ def visualizations(df):
                                values="Gap",
                                aggfunc="mean")
     pivot_map = pivot_map.rename(columns={0: "SGD", 1: "Adam"})
+    pivot_map.index = pivot_map.index.astype(int)
     plt.figure(figsize=(8, 10))
     sns.heatmap(pivot_map, annot=True, cmap="YlOrRd")
     plt.title("Overfitting Heatmap: Architecture vs Optimizer")
+    plt.tight_layout()
 
     pivot_map = df.pivot_table(index="Architecture ID",
                                columns="Optimizer ID",
                                values="Accuracy (Training)",
                                aggfunc="mean")
     pivot_map = pivot_map.rename(columns={0: "SGD", 1: "Adam"})
+    pivot_map.index = pivot_map.index.astype(int)
     plt.figure(figsize=(8, 10))
     sns.heatmap(pivot_map, annot=True, cmap="Greens")
     plt.title("Training Accuracy Heatmap: Architecture vs Optimizer")
+    plt.tight_layout()
 
     pivot_map = df.pivot_table(index="Architecture ID",
                                columns="Optimizer ID",
                                values="Accuracy (Testing)",
                                aggfunc="mean")
     pivot_map = pivot_map.rename(columns={0: "SGD", 1: "Adam"})
+    pivot_map.index = pivot_map.index.astype(int)
     plt.figure(figsize=(8, 10))
     sns.heatmap(pivot_map, annot=True, cmap="Greens")
     plt.title("Testing Accuracy Heatmap: Architecture vs Optimizer")
+    plt.tight_layout()
     plt.show()
 
     # graphs over time by architecture ID
@@ -147,23 +153,12 @@ def visualizations(df):
     plt.ylabel("Average Testing Accuracy of 5 Epochs")
     plt.show()
 
-    # pie chart of runtime
-    total_runtime = df.sum()["Runtime (s)"] / 60 / 60
-    total_loadtime = df.sum()["Data Load Time (s)"] / 50 / 60 / 60
-    print(f"Total Runtime (h): {total_runtime}")
-    print(f"Total Loadtime (h): {total_loadtime}")
-    print(f"Total Time (h): {total_runtime + total_loadtime}")
-    (df.groupby(["Batch Size"]).sum()["Runtime (s)"] / 60 / 60 / total_runtime).plot(kind="pie", colormap="Spectral", autopct="%1.1f%%")
-    plt.title("Percentage of Total Runtime by Batch Size")
-    plt.text(s=f"Total Runtime (h): {round(total_runtime, 2)}", x=0, y=0, horizontalalignment="center", verticalalignment="bottom")
-    plt.legend(title="Batch Size", loc="upper left")
+    # runtime vs batch size and architecture line graph
+    sns.lineplot(data=df, x="Architecture ID", y='Runtime (s)', hue=df['Batch Size'].astype(int), palette="Spectral")
+    plt.xticks(range(20))
+    plt.title("Average Runtime per Epoch by Architecture ID and Batch Size")
+    plt.tight_layout()
     plt.show()
-    (df.groupby(["Architecture ID"]).sum()["Runtime (s)"] / 60 / 60 / total_runtime).plot(kind="pie", colormap="Spectral", autopct="%1.1f%%")
-    plt.title("Percentage of Total Runtime by Architecture ID")
-    plt.text(s=f"Total Runtime (h): {round(total_runtime, 2)}", x=0, y=0, horizontalalignment="center", verticalalignment="bottom")
-    plt.legend(title="Architecture ID", loc="upper left")
-    plt.show()
-
 
 if __name__ == "__main__":
     df = pd.read_csv("trials.csv", dtype=float)
@@ -173,6 +168,7 @@ if __name__ == "__main__":
     pd.set_option('display.max_columns', None)
     pd.set_option('display.width', 1000)
     plt.style.use("fivethirtyeight")
+    plt.rcParams["font.size"] = 24
 
     numericalData(df)
     hypothesisTesting(df)
