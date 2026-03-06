@@ -10,7 +10,7 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 
 
-def genTrials():
+def gen_trials():
     print("Generating trials spreadsheet...")
     data = {}
 
@@ -19,42 +19,42 @@ def genTrials():
                "Loss (Training)", "Accuracy (Training)", "F1 Score (Training)",
                "Loss (Testing)", "Accuracy (Testing)", "F1 Score (Testing)"]
     i = 1
-    for batchSize in [64, 128, 256]:
+    for batch_size in [64, 128, 256]:
         for dataset in [0, 1, 2]:  # MNIST, FASHION, CIFAR
-            for learningRate in [0.01, 0.001, 0.0001]:
+            for learning_rate in [0.01, 0.001, 0.0001]:
                 for optimizer in [0, 1]:  # SGD, ADAM
                     for architecture in range(20):
                         for trial in range(1, 4):
                             for epoch in range(1, 51):
-                                data[i] = [batchSize, dataset, learningRate, optimizer, architecture, trial, epoch,
+                                data[i] = [batch_size, dataset, learning_rate, optimizer, architecture, trial, epoch,
                                            0, 0, 0,
                                            0, 0, 0,
                                            0, 0, 0]
                                 i += 1
 
-    dataFrame = pd.DataFrame(
+    df = pd.DataFrame(
         data
     )
 
-    print(dataFrame.T)
-    dataFrame.T.to_csv("new_trials.csv", header=headers, index=False)
+    print(df.T)
+    df.T.to_csv("new_trials.csv", header=headers, index=False)
     print("Please rename your spreadsheet to 'trials.csv' to avoid accidental overwrite!")
 
 
-def getTrial():
-    dataFrame = pd.read_csv("trials.csv", dtype=float)
-    rowCount = dataFrame.shape[0]
+def get_trial():
+    df = pd.read_csv("trials.csv", dtype=float)
+    rowCount = df.shape[0]
 
-    for index, row in dataFrame.iterrows():
+    for index, row in df.iterrows():
         if row["Epoch"] == 1 and row["Seed"] == 0:
             start_index = index
-            batchSize = int(row["Batch Size"])
-            datasetID = row["Dataset ID"]
-            learningRate = row["Learning Rate"]
-            optimizerID = row["Optimizer ID"]
-            architectureID = row["Architecture ID"]
+            batch_size = int(row["Batch Size"])
+            dataset = row["Dataset ID"]
+            learning_rate = row["Learning Rate"]
+            optimizer = row["Optimizer ID"]
+            architecture = row["Architecture ID"]
 
-            match datasetID:
+            match dataset:
                 case 0:
                     train_dataset = datasets.MNIST(root="data", train=True, download=True, transform=ToTensor())
                     test_dataset = datasets.MNIST(root="data", train=False, download=True, transform=ToTensor())
@@ -84,7 +84,7 @@ def getTrial():
                     torch.stack([img for img, _ in train_dataset]),
                     torch.tensor([label for _, label in train_dataset])
                 ),
-                batch_size=batchSize,
+                batch_size=batch_size,
                 shuffle=True,
                 generator=torch.Generator().manual_seed(seed),
             )
@@ -93,19 +93,19 @@ def getTrial():
                     torch.stack([img for img, _ in test_dataset]),
                     torch.tensor([label for _, label in test_dataset])
                 ),
-                batch_size=batchSize,
+                batch_size=batch_size,
                 shuffle=False,
                 generator=torch.Generator().manual_seed(seed),
             )
             load_time = time.time() - start_load_time
 
-            match optimizerID:
+            match optimizer:
                 case 0:
                     optimizer = optim.SGD
                 case 1:
                     optimizer = optim.Adam
 
-            match architectureID:
+            match architecture:
                 case 0:
                     architecture = nn.Sequential(
                         nn.Linear(input_size, 10)
@@ -306,9 +306,9 @@ def getTrial():
                     )
 
             print(f"Started Trial At: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Load Time Elapsed: {round(load_time, 2)}s")
-            return loaded_train, loaded_test, learningRate, optimizer, architecture, seed, load_time, start_index
+            return loaded_train, loaded_test, learning_rate, optimizer, architecture, seed, load_time, start_index
     return None
 
 
 if __name__ == "__main__":
-    genTrials()
+    gen_trials()

@@ -6,7 +6,7 @@ from statsmodels.formula.api import ols
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 
-def numericalData(df):
+def numerical_data(df):
     # data load time impacted by dataset id, but vary little variance otherwise
     print(df.groupby(["Dataset ID"]).agg({"Data Load Time (s)": ["min", "max", "mean", "std"]}))
 
@@ -27,7 +27,7 @@ def numericalData(df):
     print(df.sort_values("Runtime (s)", ascending=True).groupby("Dataset ID").head(10))
     print(df.sort_values("Accuracy (Testing)", ascending=False).groupby("Dataset ID").head(100).melt().value_counts().head(10))
 
-def hypothesisTesting(df):
+def hypothesis_testing(df):
     df_clean = df.rename(columns={
         "Runtime (s)": "Runtime",
         "Accuracy (Testing)": "Accuracy_Testing",
@@ -67,7 +67,7 @@ def hypothesisTesting(df):
     anova_table['eta_sq'] = anova_table['sum_sq'] / (anova_table['sum_sq'] + anova_table.loc['Residual', 'sum_sq'])
     print(anova_table)
 
-def trendAnalysis(df):
+def trend_analysis(df):
     # correlations and trends
     print(df[["Architecture ID", "Gap", "Runtime (s)", "Accuracy (Training)", "Accuracy (Testing)"]].corr())
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     plt.style.use("fivethirtyeight")
     plt.rcParams["font.size"] = 24
 
-    numericalData(df)
-    hypothesisTesting(df)
-    trendAnalysis(df)
+    numerical_data(df)
+    hypothesis_testing(df)
+    trend_analysis(df)
     visualizations(df)

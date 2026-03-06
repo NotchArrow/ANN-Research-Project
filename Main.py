@@ -95,7 +95,7 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore", category=VisibleDeprecationWarning)
 
     # get next trial to complete and start loop
-    trial_data = TrialManager.getTrial()
+    trial_data = TrialManager.get_trial()
     while trial_data is not None:
         train_dataloader, test_dataloader, lr, optimizer_type, architecture, seed, load_time, start_index = trial_data
 
@@ -133,10 +133,10 @@ if __name__ == "__main__":
             runtimes.append(time.time() - epoch_start_time)
 
         # log data
-        dataFrame = pd.read_csv("trials.csv", dtype=float)
+        df = pd.read_csv("trials.csv", dtype=float)
 
         for i, index in enumerate(range(start_index, start_index + epochs)):
-            row = dataFrame.iloc[index]
+            row = df.iloc[index]
             row["Seed"] = seed
             row["Data Load Time (s)"] = load_time
             row["Runtime (s)"] = runtimes[i]
@@ -147,8 +147,8 @@ if __name__ == "__main__":
             row["Accuracy (Testing)"] = testing_accuracies[i]
             row["F1 Score (Testing)"] = testing_f1[i]
 
-        dataFrame.to_csv("trials.csv", index=False)
+        df.to_csv("trials.csv", index=False)
         print(f"Finished Trial At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
         # get new trial info
-        trial_data = TrialManager.getTrial()
+        trial_data = TrialManager.get_trial()
