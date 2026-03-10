@@ -169,6 +169,9 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
     plt.style.use("fivethirtyeight")
     plt.rcParams["font.size"] = 24
+    plt.rcParams['figure.facecolor'] = 'white'
+    plt.rcParams['axes.facecolor'] = 'white'
+    plt.rcParams['savefig.facecolor'] = 'white'
 
     numerical_data(df)
     hypothesis_testing(df)
